@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cvat-ui
+  name: cvat-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cvat-ui
+  template:
+    metadata:
+      labels:
+        app: cvat-ui
+    spec:
+      containers:
+        - image: openvino/cvat_ui
+          name: cvat-ui
+      restartPolicy: Always
+status: {}

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cvat-redis
+  name: cvat-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cvat-redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: cvat-redis
+    spec:
+      containers:
+        - name: cvat-redis
+          image: redis:4.0-alpine 
+          ports:
+            - containerPort: 6379
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cvat-redis
+  labels:
+    app: cvat-redis
+spec:
+  ports:
+   - port: 6379
+     targetPort: 6379
+  selector:
+   app: cvat-redis
+

@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.26.0 (40646f47)
+    traefik.enable: "true"
+    traefik.http.routers.cvat.entrypoints: web
+    traefik.http.routers.cvat.rule: Host(`localhost`) && PathPrefix(`/api/`, `/git/`, `/opencv/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+    traefik.http.services.cvat.loadbalancer.server.port: "8080"
+  creationTimestamp: null
+  labels:
+    io.kompose.service: cvat
+  name: cvat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: cvat
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.26.0 (40646f47)
+        traefik.enable: "true"
+        traefik.http.routers.cvat.entrypoints: web
+        traefik.http.routers.cvat.rule: Host(`localhost`) && PathPrefix(`/api/`, `/git/`, `/opencv/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+        traefik.http.services.cvat.loadbalancer.server.port: "8080"
+      creationTimestamp: null
+      labels:
+        io.kompose.network/cvat: "true"
+        io.kompose.service: cvat
+    spec:
+      containers:
+        - env:
+            - name: ADAPTIVE_AUTO_ANNOTATION
+              value: "false"
+            - name: ALLOWED_HOSTS
+              value: '*'
+            - name: CVAT_POSTGRES_HOST
+              value: cvat_db
+            - name: CVAT_REDIS_HOST
+              value: cvat_redis
+            - name: DJANGO_MODWSGI_EXTRA_ARGS
+            - name: no_proxy
+              value: elasticsearch,kibana,logstash,nuclio,opa,
+          image: openvino/cvat_server
+          name: cvat
+          resources: {}
+          volumeMounts:
+            - mountPath: /home/django/data
+              name: cvat-data
+            - mountPath: /home/django/keys
+              name: cvat-keys
+            - mountPath: /home/django/logs
+              name: cvat-logs
+            - mountPath: /home/django/data/data
+              name: cvat-data
+      restartPolicy: Always
+      volumes:
+        - name: cvat-data
+          persistentVolumeClaim:
+            claimName: cvat-data
+        - name: cvat-keys
+          persistentVolumeClaim:
+            claimName: cvat-keys
+        - name: cvat-logs
+          persistentVolumeClaim:
+            claimName: cvat-logs
+        - name: cvat-data
+          persistentVolumeClaim:
+            claimName: cvat-data
+status: {}

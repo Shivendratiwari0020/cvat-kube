@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cvat-config
+data:
+  DJANGO_MODWSGI_EXTRA_ARGS: ''
+  ALLOWED_HOSTS: '*'
+  CVAT_REDIS_HOST: 'cvat_redis'
+  CVAT_POSTGRES_HOST: 'cvat_db'
+  ADAPTIVE_AUTO_ANNOTATION: 'false'
+  no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}

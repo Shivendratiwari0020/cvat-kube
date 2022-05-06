@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: cvat
+    app: cvat
+  name: cvat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: cvat
+      app: cvat
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        io.kompose.network/cvat: "true"
+        io.kompose.service: cvat
+        app: cvat
+    spec:
+      containers:
+        - env:
+            - name: ADAPTIVE_AUTO_ANNOTATION
+              value: "false"
+            - name: ALLOWED_HOSTS
+              value: '*'
+            - name: CVAT_POSTGRES_HOST
+              value: "localhost"
+            - name: CVAT_REDIS_HOST
+              value: "cvat-redis.default"
+            - name: DJANGO_MODWSGI_EXTRA_ARGS
+            - name: no_proxy
+              value: "elasticsearch,kibana,logstash,nuclio,opa"
+          image: openvino/cvat_server
+          name: cvat
+          resources: {}
+        - name: cvat-redis
+          image: redis:4.0-alpine
+          ports:
+            - containerPort: 6379
+        - name: cvat-ui
+          image: openvino/cvat_ui
+          resources: {}
+        - args:
+            - run
+            - --server
+            - --addr
+            - :8181
+            - --set=decision_logs.console=true
+            - /rules
+          image: openpolicyagent/opa:0.34.2-rootless
+          name: cvat-opa
+          ports:
+            - containerPort: 8181
+          volumeMounts:
+            - mountPath: /rules
+              name: cvat-opa-claim0
+      volumes:
+        - name: cvat-opa-claim0
+          persistentVolumeClaim:
+            claimName: cvat-opa-claim0
+
+        - name: cvat-db
+          image: postgres:10-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: cvat-db-config
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: cvat-db
+          #volumeMounts:
+          #  - mountPath: /home/django/data/
+          #   name: cvat-data
+      restartPolicy: Always
+      volumes:
+        - name: cvat-db
+          persistentVolumeClaim:
+            claimName: cvat-db   
+
+    
+      #   volumes:
+      # - name: cvat-data
+      #   persistentVolumeClaim:
+      #     claimName: cvat-data
+status: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cvat-db-config
+  labels:
+    app: cvat-db
+data:
+  POSTGRES_DB: cvat
+  POSTGRES_USER: root
+  POSTGRES_HOST_AUTH_METHOD: trust

@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cvat
+  name: cvat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cvat
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        io.kompose.network/cvat: "true"
+        app: cvat
+    spec:
+      containers:
+        - name: cvat
+          image: openvino/cvat_server      
+          env:
+            - name: ADAPTIVE_AUTO_ANNOTATION
+              value: "false"
+            - name: ALLOWED_HOSTS
+              value: '*'
+            - name: CVAT_POSTGRES_HOST
+              value: "172.16.213.12"
+            - name: CVAT_REDIS_HOST
+              value: "172.16.213.14"
+            - name: DJANGO_MODWSGI_EXTRA_ARGS
+            - name: no_proxy
+              value: "elasticsearch,kibana,logstash,nuclio,opa"
+          volumeMounts:
+            - mountPath: /home/django/data
+              name: cvat-data
+
+      restartPolicy: Always
+      volumes:
+        - name: cvat-data
+          persistentVolumeClaim:
+            claimName: cvat-data
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+  labels:
+    app: cvat
+  name: cvat-service
+spec:
+  type: NodePort
+  ports:
+   - port: 8080
+     nodePort: 30008
+  selector:
+    app: cvat
+status:
+  loadBalancer: {}
+

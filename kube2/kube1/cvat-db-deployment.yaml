@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cvat-db
+  name: cvat-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cvat-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: cvat-db
+    spec:
+      containers:
+        - name: cvat-db
+          image: postgres:10-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: cvat-db-config    
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: cvat-db
+      restartPolicy: Always
+      volumes:
+        - name: cvat-db
+          persistentVolumeClaim:
+            claimName: cvat-db
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cvat-db-config
+  labels:
+    app: cvat-db
+data:
+  POSTGRES_DB: cvat
+  POSTGRES_USER: root
+  POSTGRES_HOST_AUTH_METHOD: trust
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cvat-db
+  labels:
+    app: cvat-db
+spec:
+  ports:
+   - port: 5432
+     targetPort: 5432
+  selector:
+   app: cvat-db

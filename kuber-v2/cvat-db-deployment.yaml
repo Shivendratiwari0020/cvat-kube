@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.26.0 (40646f47)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: cvat-db
+  name: cvat-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: cvat-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/cvat: "true"
+        io.kompose.service: cvat-db
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_DB
+              value: cvat
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: trust
+            - name: POSTGRES_USER
+              value: root
+          image: postgres:10-alpine
+          name: cvat-db
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: cvat-db
+      restartPolicy: Always
+      volumes:
+        - name: cvat-db
+          persistentVolumeClaim:
+            claimName: cvat-db
+status: {}
